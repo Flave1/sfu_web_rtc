@@ -59,7 +59,7 @@ let consumers = []      // [ { socketId1, roomName1, consumer, }, ... ]
 const createWorker = async () => {
   worker = await mediasoup.createWorker({
     rtcMinPort: 2000,
-    rtcMaxPort: 2020,
+    rtcMaxPort: 2100,
   })
   console.log(`worker pid ${worker.pid}`)
 
@@ -428,8 +428,8 @@ const createWebRtcTransport = async (router) => {
       const webRtcTransport_options = {
         listenIps: [
           {
-            ip: '0.0.0.0', // replace with relevant IP address
-            announcedIp: '172.20.10.3',
+            ip: '127.0.0.1', // replace with relevant IP address
+            //announcedIp: '172.20.10.3',
           }
         ],
         enableUdp: true,
