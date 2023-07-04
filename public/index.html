@@ -1,85 +1,164 @@
-<html>
-  <head>
-    <style>
-        button {
-            margin: 2;
-        }
-        tr {
-            vertical-align: top;
-        }
-        video {
-            width: 360px;
-            background-color: black;
-            padding: 10;
-            margin: 1px 1px;
-        }
-        .mainTable {
-            width: 100%;
-        }
-        .localColumn {
-            width: 246px;
-        }
-        .remoteColumn {
-            display: flex;
-            flex-wrap: wrap;
-        }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="css/room.css">
+</head>
+<body>
+    <header id="nav">
+      <div class="nav--list">
+        <button
+          id="members__button"
+         onClick="setToggleMemberDisplay(!toggleMemberDisplay)"
+        >
+          <svg
+            width="24"
+            height="24"
+            xmlns="http://www.w3.org/2000/svg"
+            fillRule="evenodd"
+            clipRule="evenodd"
+            fill="white"
+          >
+            <path d="M24 18v1h-24v-1h24zm0-6v1h-24v-1h24zm0-6v1h-24v-1h24z" />
+            <path d="M24 19h-24v-1h24v1zm0-6h-24v-1h24v1zm0-6h-24v-1h24v1z" />
+          </svg>
+        </button>
+        <h3 id="logo">
+          <img
+            src="https://t4.ftcdn.net/jpg/03/16/32/23/240_F_316322355_m8FC5EDRun5JOAAHD94CvW1uUScY5IFh.jpg"
+            alt="Site Logo"
+          />
+          <span>FwsMeet</span>
+        </h3>
+      </div>
 
-        #localVideo {
-            width: 240;
-        }
-        .remoteVideo {
-            float: left;
-        }
+      <div id="nav__links">
+        <button
+          id="chat__button"
+          onClick= "setToggleChatDisplay(!toggleChatDisplay)"
+        >
+          <svg
+            width="24"
+            height="24"
+            xmlns="http://www.w3.org/2000/svg"
+            fillRule="evenodd"
+            fill="#2a62ca"
+            clipRule="evenodd"
+          >
+            <path d="M24 20h-3v4l-5.333-4h-7.667v-4h2v2h6.333l2.667 2v-2h3v-8.001h-2v-2h4v12.001zm-15.667-6l-5.333 4v-4h-3v-14.001l18 .001v14h-9.667zm-6.333-2h3v2l2.667-2h8.333v-10l-14-.001v10.001z" />
+          </svg>
+        </button>
+      </div>
+    </header>
 
-        .videoWrap {
-            margin: 3;
-            /* padding: 5; */
-            /* background-color: papayawhip; */
-            display: flex;
-            justify-content: center;
-        }
+    <main class="general__container">
+      <div id="room__container">
+        <!-- <section
+          id="members__container"
+           style={{ display: toggleMemberDisplay ? "block" : "none" }} 
+        >
+          <div id="members__header">
+            <p class="mt-3 mx-3">Participants</p>
+            <strong id="members__count">0</strong>
+          </div>
+          <div id="member__list"></div>
+        </section> -->
+        <section id="stream__container">
+          <div id="stream__box"></div>
 
-        @media only screen and (max-width: 1060px) {
-            .video {
-                width: 300px;
-            }
-        }
-
-        @media only screen and (max-width: 940px) {
-            .video {
-                width: 240px;
-            }
-        }
-    </style>
-  </head>
-  <body>
-    <body>
-        <div id="video">
-            <table class="mainTable">
-                <tbody>
-                    <tr>
-                        <td class="localColumn">
-                            <video id="localVideo" autoplay class="video" muted ></video>
-                        </td>
-                        <td class="remoteColumn">
-                            <div id="videoContainer"></div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-            <table>
-                <tbody>
-                    <tr>
-                        <td>
-                            
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+          <div id="streams__container">
+          <div class="video__container"  id="user-container">
+            <div class="video-player" >
+                <video id="localVideo" autoplay class="video" muted ></video>
+            </div>
+            </div>
+            <div  id="videoContainer"></div>
+           
         </div>
-    </body>
+          <div class="stream__actions">
+            <button
+              id="camera-btn"
+              class="active"
+              onclick="toggleCamera(e)"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                fill="white"
+                viewBox="0 0 24 24"
+              >
+                <path d="M16 18c0 1.104-.896 2-2 2h-12c-1.105 0-2-.896-2-2v-12c0-1.104.895-2 2-2h12c1.104 0 2 .896 2 2v12zm8-14l-6 6.223v3.554l6 6.223v-16z" />
+              </svg>
+            </button>
+            <button
+              id="mic-btn"
+              class="active"
+              onclick="toggleMic(e)"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 2c1.103 0 2 .897 2 2v7c0 1.103-.897 2-2 2s-2-.897-2-2v-7c0-1.103.897-2 2-2zm0-2c-2.209 0-4 1.791-4 4v7c0 2.209 1.791 4 4 4s4-1.791 4-4v-7c0-2.209-1.791-4-4-4zm8 9v2c0 4.418-3.582 8-8 8s-8-3.582-8-8v-2h2v2c0 3.309 2.691 6 6 6s6-2.691 6-6v-2h2zm-7 13v-2h-2v2h-4v2h10v-2h-4z" />
+              </svg>
+            </button>
+            <button id="screen-btn" onclick="toggleScreen(e)">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+              >
+                <path d="M0 1v17h24v-17h-24zm22 15h-20v-13h20v13zm-6.599 4l2.599 3h-12l2.599-3h6.802z" />
+              </svg>
+            </button>
+
+            <button id="leave-btn" 
+            onClick="navigate(-1)"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                fill="white"
+                viewBox="0 0 24 24"
+              >
+                <path d="M20 22.621l-3.521-6.795c-.008.004-1.974.97-2.064 1.011-2.24 1.086-6.799-7.82-4.609-8.994l2.083-1.026-3.493-6.817-2.106 1.039c-7.202 3.755 4.233 25.982 11.6 22.615.121-.055 2.102-1.029 2.11-1.033z" />
+              </svg>
+            </button>
+          </div>
+        </section>
+
+        <!-- <section
+          id="messages__container"
+           style={{ display: toggleChatDisplay ? "block" : "none" }} 
+        >
+          <div id="messages" ref={messagesContainerRef}></div>
+
+          <form
+            id="message__form"
+            onSubmit={(e) => sendMessage(e, textValue, setTextValue)}
+          >
+            <input
+              type="text"
+               value={textValue}
+              onChange={(e) => setTextValue(e.target.value)} 
+              placeholder="Send a message...."
+            />
+          </form>
+        </section> -->
+      </div>
+    </main>
+  
+</body>
   </body>
   <footer>
       <script src="bundle.js"></script>
   </footer>
 </html>
+

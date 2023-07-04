@@ -312,14 +312,14 @@ const connectRecvTransport = async (consumerTransport, remoteProducerId, serverC
     // create a new div element for the new consumer media
     const newElem = document.createElement('div')
     newElem.setAttribute('id', `td-${remoteProducerId}`)
-
     if (params.kind == 'audio') {
       //append to the audio container
       newElem.innerHTML = '<audio id="' + remoteProducerId + '" autoplay></audio>'
     } else {
       //append to the video container
-      newElem.setAttribute('class', 'remoteVideo')
-      newElem.innerHTML = '<video id="' + remoteProducerId + '" autoplay class="video" ></video>'
+      newElem.setAttribute('class','video__container')
+      // newElem.setAttribute('class', 'remoteVideo')
+      newElem.innerHTML = '<video id="' + remoteProducerId + '" autoplay class="video remoteVideo" ></video>'
     }
 
     videoContainer.appendChild(newElem)
