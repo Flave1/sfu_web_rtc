@@ -30,7 +30,7 @@
             src="https://t4.ftcdn.net/jpg/03/16/32/23/240_F_316322355_m8FC5EDRun5JOAAHD94CvW1uUScY5IFh.jpg"
             alt="Site Logo"
           />
-          <span>FwsMeet</span>
+          <span class="textFont">FwsMeet</span>
         </h3>
       </div>
 
@@ -66,22 +66,22 @@
           <div id="member__list"></div>
         </section> -->
         <section id="stream__container">
-          <div id="stream__box"></div>
+          <div id="stream__box"> </div>
+       
 
           <div id="streams__container">
           <div class="video__container"  id="user-container">
             <div class="video-player" >
-                <video id="localVideo" autoplay class="video" muted ></video>
+                <video id="localVideo" autoplay class="video" ></video>
             </div>
             </div>
-            <div  id="videoContainer"></div>
+
            
         </div>
           <div class="stream__actions">
             <button
               id="camera-btn"
               class="active"
-              onclick="toggleCamera(e)"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -96,7 +96,6 @@
             <button
               id="mic-btn"
               class="active"
-              onclick="toggleMic(e)"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -107,7 +106,7 @@
                 <path d="M12 2c1.103 0 2 .897 2 2v7c0 1.103-.897 2-2 2s-2-.897-2-2v-7c0-1.103.897-2 2-2zm0-2c-2.209 0-4 1.791-4 4v7c0 2.209 1.791 4 4 4s4-1.791 4-4v-7c0-2.209-1.791-4-4-4zm8 9v2c0 4.418-3.582 8-8 8s-8-3.582-8-8v-2h2v2c0 3.309 2.691 6 6 6s6-2.691 6-6v-2h2zm-7 13v-2h-2v2h-4v2h10v-2h-4z" />
               </svg>
             </button>
-            <button id="screen-btn" onclick="toggleScreen(e)">
+            <button id="screen-btn">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -117,6 +116,10 @@
                 <path d="M0 1v17h24v-17h-24zm22 15h-20v-13h20v13zm-6.599 4l2.599 3h-12l2.599-3h6.802z" />
               </svg>
             </button>
+
+            <button id="record-btn">
+              <svg width="24" height="24" fill="white" xmlns="http://www.w3.org/2000/svg" xmlns:serif="http://www.serif.com/" fill-rule="evenodd" clip-rule="evenodd"><circle serif:id="shape 19" cx="12" cy="12" r="12"/></svg>
+           </button>
 
             <button id="leave-btn" 
             onClick="navigate(-1)"

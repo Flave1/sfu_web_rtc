@@ -21671,9 +21671,8 @@ let audioProducer
 let videoProducer
 let consumer
 let isProducer = false
+let streams;
 
-// https://mediasoup.org/documentation/v3/mediasoup-client/api/#ProducerOptions
-// https://mediasoup.org/documentation/v3/mediasoup-client/api/#transport-produce
 let params = {
   // mediasoup params
   encodings: [
@@ -21693,7 +21692,6 @@ let params = {
       scalabilityMode: 'S1T3',
     },
   ],
-  // https://mediasoup.org/documentation/v3/mediasoup-client/api/#ProducerCodecOptions
   codecOptions: {
     videoGoogleStartBitrate: 1000
   }
@@ -21702,6 +21700,9 @@ let params = {
 let audioParams;
 let videoParams = { params };
 let consumingTransports = [];
+let startedRecording = false;
+let sharingScreen = false;
+let userIdInDisplayFrame = null;
 
 const streamSuccess = (stream) => {
   localVideo.srcObject = stream
@@ -21721,24 +21722,33 @@ const joinRoom = () => {
 
     // once we have rtpCapabilities from the Router, create Device
     createDevice()
+    document.getElementById(`user-container`).addEventListener("click", expandVideoFrame);
+    document.getElementById("camera-btn").onclick = () => {
+      toggleCamera(streams);
+    };
+document.getElementById("mic-btn").onclick = () => { 
+  toggleMic(streams);
+};
+document.getElementById("record-btn").onclick = () => {
+toggleRecording()
+}
+document.getElementById("screen-btn").onclick = () => {
+  toggleScreen() 
+  }
   })
 }
-
+let constraints = {
+  video: {
+    width: { min: 640, max: 1920 },
+    height: { min: 480,  max: 1080 },
+  },
+  audio: true,
+};
 const getLocalStream = () => {
-  navigator.mediaDevices.getUserMedia({
-    audio: true,
-    video: {
-      width: {
-        min: 640,
-        max: 1920,
-      },
-      height: {
-        min: 400,
-        max: 1080,
-      }
-    }
+  navigator.mediaDevices.getUserMedia(constraints)
+  .then((stream)=> {streamSuccess(stream);
+    streams = stream
   })
-  .then(streamSuccess)
   .catch(error => {
     console.log(error.message)
   })
@@ -21750,7 +21760,6 @@ const createDevice = async () => {
   try {
     device = new mediasoupClient.Device()
 
-    // https://mediasoup.org/documentation/v3/mediasoup-client/api/#device-load
     // Loads the device with RTP capabilities of the Router (server side)
     await device.load({
       // see getRtpCapabilities() below
@@ -21784,10 +21793,8 @@ const createSendTransport = () => {
 
     // creates a new WebRTC Transport to send media
     // based on the server's producer transport params
-    // https://mediasoup.org/documentation/v3/mediasoup-client/api/#TransportOptions
     producerTransport = device.createSendTransport(params)
 
-    // https://mediasoup.org/documentation/v3/communication-between-client-and-server/#producing-media
     // this event is raised when a first call to transport.produce() is made
     // see connectSendTransport() below
     producerTransport.on('connect', async ({ dtlsParameters }, callback, errback) => {
@@ -21974,7 +21981,7 @@ const connectRecvTransport = async (consumerTransport, remoteProducerId, serverC
       newElem.innerHTML = '<video id="' + remoteProducerId + '" autoplay class="video remoteVideo" ></video>'
     }
 
-    videoContainer.appendChild(newElem)
+  streams__container.appendChild(newElem)
 
     // destructure and retrieve the video track from the producer
     const { track } = consumer
@@ -21998,6 +22005,222 @@ socket.on('producer-closed', ({ remoteProducerId }) => {
   consumerTransports = consumerTransports.filter(transportData => transportData.producerId !== remoteProducerId)
 
   // remove the video div element
-  videoContainer.removeChild(document.getElementById(`td-${remoteProducerId}`))
+  streams__container.removeChild(document.getElementById(`td-${remoteProducerId}`))
 })
+
+//toggle camera
+let toggleCamera = async (stream) => {
+  let videoTrack = stream.getTracks().find((track) => track.kind === "video");
+
+  if (videoTrack.enabled) {
+    videoTrack.enabled = false;
+    document.getElementById("camera-btn").style.backgroundColor =
+      "rgb(255, 80, 80)";
+  } else {
+    videoTrack.enabled = true;
+    document.getElementById("camera-btn").style.backgroundColor =
+      "rgb(42, 98, 202, .9)";
+  }
+}
+//toggle mic
+let toggleMic = async (stream) => {
+  let audioTrack = stream.getTracks().find((track) => track.kind === "audio");
+
+  if (audioTrack.enabled) {
+    audioTrack.enabled = false;
+    document.getElementById("mic-btn").style.backgroundColor =
+      "rgb(255, 80, 80)";
+  } else {
+    audioTrack.enabled = true;
+    document.getElementById("mic-btn").style.backgroundColor =
+      "rgb(42, 98, 202, .9)"; 
+  }
+};
+let toggleRecording = async () => {
+  if (!startedRecording) {
+    startRecording();
+    document.getElementById("record-btn").style.backgroundColor =
+      "rgb(42, 98, 202,.9)";
+  } else {
+    stopRecording();
+    document.getElementById("record-btn").style.backgroundColor =
+      "rgb(38, 38, 37)";
+  }
+};
+
+// let startRecording = () =>{
+//   recordedChunks = [];
+// navigator.mediaDevices.getUserMedia(constraints)
+//         .then((stream) => {
+//             mediaRecorder = new MediaRecorder(stream);
+//             mediaRecorder.ondataavailable = (event) => {
+//               recordedChunks.push(event.data);
+//             }; mediaRecorder.start();
+//             mediaRecorder.onstop = () => {
+//               console.log('Recording stopped');
+//               downloadRecording();
+//             };
+           
+//           })
+//           .catch((error) => {
+//             console.error('Error accessing media devices:', error);
+//           });
+//   startedRecording = true;
+//   console.log("recording started");
+// }
+
+let startRecording = async () =>{
+  let stream = await navigator.mediaDevices.getDisplayMedia({
+    video: true
+  })
+
+  //needed for better browser support
+  const mime = MediaRecorder.isTypeSupported("video/webm; codecs=vp9") 
+             ? "video/webm; codecs=vp9" 
+             : "video/webm"
+    let mediaRecorder = new MediaRecorder(stream, {
+        mimeType: mime
+    })
+   
+    let chunks = []
+    mediaRecorder.addEventListener('dataavailable', function(e) {
+        chunks.push(e.data)
+    })
+
+    mediaRecorder.addEventListener('stop', function(){
+      let blob = new Blob(chunks, {
+          type: chunks[0].type
+      })
+      let url = URL.createObjectURL(blob)
+
+      let video = document.querySelector("video")
+      video.src = url
+
+      let a = document.createElement('a')
+      a.href = url
+      a.download = 'video.webm'
+      a.click()
+  })
+
+    //we have to start the recorder manually
+    mediaRecorder.start()
+  console.log("recording started");
+}
+
+
+let stopRecording = () => {
+  mediaRecorder.stop();
+  startedRecording = false;
+}
+
+// let downloadRecording =() => {
+//   if (recordedChunks.length === 0) {
+//     console.log("No recorded chunks available.");
+//     return;
+//   }
+//   const blob = new Blob(recordedChunks, { type: recordedChunks[0].type });
+//   const url = URL.createObjectURL(blob);
+//   const a = document.createElement("a");
+//   a.href = url;
+//   a.download = "recorded-media.webm";
+//   document.body.appendChild(a);
+//   a.click();
+//   document.body.removeChild(a);
+//   URL.revokeObjectURL(url);
+// }
+let toggleScreen = async () => {
+  let streamBox =  document.getElementById("stream__box");
+  let screenBtn = document.getElementById("screen-btn");
+  const newElem = document.createElement('div')
+    newElem.setAttribute('class', 'video__container');
+    newElem.innerHTML = `<div class="video-player-screen-share" ><video id="sharedVideo" autoplay ></video></div>`
+    streamBox.appendChild(newElem); 
+  let videoElem = document.getElementById("sharedVideo")
+  var displayMediaOptions = {
+    video: {
+        cursor: "always",
+        height: 500,
+        width: 2100, 
+    },
+    audio: false
+};
+
+if(userIdInDisplayFrame){
+  streamBox.addEventListener("click", hideDisplayFrame);//edit 
+}
+
+  if (!sharingScreen) {
+    sharingScreen = true;
+      try {
+          videoElem.srcObject = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+          dumpOptionsInfo();
+      } catch (err) {
+          // Handle error
+          console.error("Error: " + err);
+      }
+    
+  
+  
+  // Dump the available media track capabilities to the console
+  function dumpOptionsInfo() {
+      const videoTrack = videoElem.srcObject.getVideoTracks()[0];
+      console.info("Track settings:");
+      console.info(JSON.stringify(videoTrack.getSettings(), null, 2));
+      console.info("Track constraints:");
+      console.info(JSON.stringify(videoTrack.getConstraints(), null, 2));
+}
+    streamBox.style.display = 'block';
+    screenBtn.style.backgroundColor =
+      "rgb(42, 98, 202,.9)";
+  } else {
+    sharingScreen = false;
+    let tracks = videoElem.srcObject.getTracks();
+    tracks.forEach(track => track.stop());
+    videoElem.srcObject = null;
+    streamBox.style.display = 'none';
+    screenBtn.style.backgroundColor =
+      "rgb(38, 38, 37)";
+  }
+}
+
+
+const expandVideoFrame = (e) => {
+  const streamsContainer = document.getElementById("stream__container");
+  const displayFrame = document.getElementById("stream__box");
+  const videoFrames = document.getElementsByClassName("video__container");
+
+  const child = displayFrame?.children[0];
+
+  if (child) {
+    streamsContainer.appendChild(child);
+  }
+  displayFrame.style.display = "block";
+  displayFrame?.appendChild(e.currentTarget);
+  userIdInDisplayFrame = e.currentTarget.id;
+  displayFrame && displayFrame.addEventListener("click", hideDisplayFrame); 
+  for (let i = 0; i < videoFrames.length; i++) {
+    if (videoFrames[i] !== userIdInDisplayFrame) {
+      videoFrames[i].style.height = "100px";
+      videoFrames[i].style.width = "100px";
+    }
+  }
+  for (let i = 0; videoFrames.length > i; i++) {
+    videoFrames[i].addEventListener("click", expandVideoFrame);
+  }
+};
+
+let hideDisplayFrame = () => {
+  const videoFrames = document.getElementsByClassName("video__container");
+  const displayFrame = document.getElementById("stream__box");
+  userIdInDisplayFrame = null;
+  displayFrame.style.display = "none";
+  let child = displayFrame?.children[0];
+  document.getElementById("streams__container").appendChild(child);
+
+  for (let i = 0; videoFrames.length > i; i++) {
+    videoFrames[i].style.height = "200px";
+    videoFrames[i].style.width = "200px";
+  }
+}; 
+
 },{"mediasoup-client":68,"socket.io-client":83}]},{},[98]);
