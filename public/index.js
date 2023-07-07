@@ -356,9 +356,9 @@ const connectRecvTransport = async (consumerTransport, remoteProducerId, serverC
   await socket.emit('consume', {
     rtpCapabilities: device.rtpCapabilities,
     remoteProducerId,
-    serverConsumerTransportId,
-  }, async ({ params }) => {
-    if (params.error) {
+    serverConsumerTransportId,  
+  }, async ({ params }) => { 
+    if (params.error) { 
       console.log('Cannot Consume')
       return
     }
@@ -370,7 +370,7 @@ const connectRecvTransport = async (consumerTransport, remoteProducerId, serverC
       id: params.id,
       producerId: params.producerId,
       kind: params.kind,
-      rtpParameters: params.rtpParameters
+      rtpParameters: params.rtpParameters 
     })
 
     consumerTransports = [
@@ -391,11 +391,12 @@ const connectRecvTransport = async (consumerTransport, remoteProducerId, serverC
       newElem.innerHTML = '<audio id="' + remoteProducerId + '" autoplay></audio>'
     } else {
       //append to the video container  
-      newElem.setAttribute('class','video__container')
+      newElem.setAttribute('class','video__container') 
       newElem.addEventListener("click", expandVideoFrame);
       newElem.innerHTML = '<video id="' + remoteProducerId + '" autoplay class="video remoteVideo" ></video>'
       remoteVideoLength = document.getElementsByClassName('video__container').length + 1;  
   document.getElementById('members__count').innerText = remoteVideoLength; 
+  addMemberToDom(remoteProducerId)
     } 
   streams__container.appendChild(newElem)
   
