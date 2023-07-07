@@ -129,9 +129,7 @@ border-radius: 50%;
     overflow-y: auto;
   }
   
-  .message__wrapper:last-child {
-    margin-bottom: 6.5rem;
-  }
+  
   
   .message__wrapper {
     gap: 10px;
@@ -146,7 +144,7 @@ border-radius: 50%;
     background-color: rgb(197, 197, 197);
   }
   
-  .messageFromPeer{
+  .messageFromSelf{
     display:flex;
     justify-content: end;
     height:100px;
@@ -188,14 +186,30 @@ border-radius: 50%;
   
   #message__form input {
     color: #fff;
-    width: 90%;
+    width: 75%;
     border: none;
     border-radius: 5px;
     padding: 18px;
     font-size: 14px;
     box-sizing: border-box;
     background-color: #2a62ca;
-    margin-left: -20px;
+  
+  }
+  #sendBtn{
+    box-sizing: border-box;
+    background-color: #2a62ca;
+    border: none;
+    border-radius: 5px;
+    padding: 18px 8px 18px 8px;
+    font-size: 14px;
+    color: #fff;
+    width:15%;
+    margin-right: 3px;
+  }
+
+  .text-alignment{
+    display: flex;
+    justify-content: end;
   }
   
   #message__form input:focus {

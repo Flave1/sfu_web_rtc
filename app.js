@@ -55,7 +55,8 @@ let peers = {}          // { socketId1: { roomName1, socket, transports = [id1, 
 let transports = []     // [ { socketId1, roomName1, transport, consumer }, ... ]
 let producers = []      // [ { socketId1, roomName1, producer, }, ... ]
 let consumers = []      // [ { socketId1, roomName1, consumer, }, ... ]
-
+let chatMessages = {}; // { roomName1: [ { sender: socketId1, message: 'Hello' }, ... ], ...}
+ 
 const createWorker = async () => {
   worker = await mediasoup.createWorker({
     rtcMinPort: 2000,
@@ -115,26 +116,47 @@ connections.on('connection', async socket => {
 
   socket.on('disconnect', () => {
     // do some cleanup
-    console.log('peer disconnected')
-    consumers = removeItems(consumers, socket.id, 'consumer')
-    producers = removeItems(producers, socket.id, 'producer')
-    transports = removeItems(transports, socket.id, 'transport')
-
-    const { roomName } = peers[socket.id]
-    delete peers[socket.id]
-
+    console.log('peer disconnected');
+    consumers = removeItems(consumers, socket.id, 'consumer');
+    producers = removeItems(producers, socket.id, 'producer');
+    transports = removeItems(transports, socket.id, 'transport');
+  
+    const { roomName } = peers[socket.id];
+    delete peers[socket.id];
+  
     // remove socket from room
     rooms[roomName] = {
       router: rooms[roomName].router,
       peers: rooms[roomName].peers.filter(socketId => socketId !== socket.id)
-    }
-  })
+    };
+  
+    // remove chat messages for the disconnected socket
+    chatMessages[roomName] = chatMessages[roomName]?.filter(message => message.sender !== socket.id);
+  });
+
+  socket.on('chat-message', ({ roomName, message }) => {
+    const sender = socket.id;
+    const chatMessage = { sender, message };
+  
+    // store the chat message
+    chatMessages[roomName] = chatMessages[roomName] || [];
+    chatMessages[roomName].push(chatMessage);
+  
+    // broadcast the chat message to all other clients in the same room
+    producers.forEach(producerData => {
+      if (producerData.socketId !== socket.id && producerData.roomName === roomName) {
+        const producerSocket = peers[producerData.socketId].socket;
+        producerSocket.emit('chat-message', chatMessage);
+      }
+    });
+  });
+  
 
   socket.on('joinRoom', async ({ roomName }, callback) => {
     // create Router if it does not exist
     // const router1 = rooms[roomName] && rooms[roomName].get('data').router || await createRoom(roomName, socket.id)
-    const router1 = await createRoom(roomName, socket.id)
-
+    const router1 = await createRoom(roomName, socket.id);
+  
     peers[socket.id] = {
       socket,
       roomName,           // Name for the Router this Peer joined
@@ -145,15 +167,16 @@ connections.on('connection', async socket => {
         name: '',
         isAdmin: false,   // Is this Peer the Admin?
       }
-    }
-
+    };
+  
     // get Router RTP Capabilities
-    const rtpCapabilities = router1.rtpCapabilities
-
-    // call callback from the client and send back the rtpCapabilities
-    callback({ rtpCapabilities })
-  })
-
+    const rtpCapabilities = router1.rtpCapabilities;
+  
+    // send the existing chat messages to the client
+    const messages = chatMessages[roomName] || [];
+    callback({ rtpCapabilities, chatMessages: messages,sender:socket.id });
+  });
+  
   const createRoom = async (roomName, socketId) => {
     // worker.createRouter(options)
     // options = { mediaCodecs, appData }
@@ -169,35 +192,17 @@ connections.on('connection', async socket => {
       router1 = await worker.createRouter({ mediaCodecs, })
     }
     
-    console.log(`Router ID: ${router1.id}`, peers.length)
+    console.log(`Router ID: ${router1.id}`, peers.length) 
 
     rooms[roomName] = {
-      router: router1,
+      router: router1, 
       peers: [...peers, socketId],
     }
 
     return router1
   }
 
-  // socket.on('createRoom', async (callback) => {
-  //   if (router === undefined) {
-  //     // worker.createRouter(options)
-  //     // options = { mediaCodecs, appData }
-  //     // mediaCodecs -> defined above
-  //     // appData -> custom application data - we are not supplying any
-  //     // none of the two are required
-  //     router = await worker.createRouter({ mediaCodecs, })
-  //     console.log(`Router ID: ${router.id}`)
-  //   }
-
-  //   getRtpCapabilities(callback)
-  // })
-
-  // const getRtpCapabilities = (callback) => {
-  //   const rtpCapabilities = router.rtpCapabilities
-
-  //   callback({ rtpCapabilities })
-  // }
+  
 
   // Client emits a request to create server side Transport
   // We need to differentiate between the producer and consumer transports
@@ -291,18 +296,20 @@ connections.on('connection', async socket => {
     callback(producerList)
   })
 
+
   const informConsumers = (roomName, socketId, id) => {
-    console.log(`just joined, id ${id} ${roomName}, ${socketId}`)
+    console.log(`just joined, id ${id} ${roomName}, ${socketId}`);
     // A new producer just joined
     // let all consumers to consume this producer
     producers.forEach(producerData => {
       if (producerData.socketId !== socketId && producerData.roomName === roomName) {
-        const producerSocket = peers[producerData.socketId].socket
+        const producerSocket = peers[producerData.socketId].socket;
         // use socket to send producer id to producer
-        producerSocket.emit('new-producer', { producerId: id })
+        producerSocket.emit('new-producer', { producerId: id, chatMessages: chatMessages[roomName] || [] });
       }
-    })
-  }
+    });
+  };
+  
 
   const getTransport = (socketId) => {
     const [producerTransport] = transports.filter(transport => transport.socketId === socketId && !transport.consumer)
@@ -381,7 +388,7 @@ connections.on('connection', async socket => {
 
         consumer.on('producerclose', () => {
           console.log('producer of consumer closed')
-          socket.emit('producer-closed', { remoteProducerId })
+          socket.emit('producer-closed', { remoteProducerId,sender:socket.id })
 
           consumerTransport.close([])
           transports = transports.filter(transportData => transportData.transport.id !== consumerTransport.id)

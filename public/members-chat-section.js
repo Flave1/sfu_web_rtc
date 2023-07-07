@@ -11,6 +11,19 @@ if(viewMembers){
 }
 })
 
+let viewMessages = true;
+let messagesContainer = document.getElementById('messages__container')
+let chatBtn = document.getElementById('chat__button')
+chatBtn.addEventListener('click',()=>{
+if(viewMessages){
+    viewMessages = false;
+    messagesContainer.style.display = 'none';
+}else{
+    viewMessages = true;
+    messagesContainer.style.display = 'block';
+}
+})
+
 
 
  // Update the number of joined members

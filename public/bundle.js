@@ -21652,7 +21652,7 @@ arguments[4][6][0].apply(exports,arguments)
 },{}],98:[function(require,module,exports){
 //index.js
 const io = require('socket.io-client')
-const mediasoupClient = require('mediasoup-client')
+const mediasoupClient = require('mediasoup-client');
 
 const roomName = window.location.pathname.split('/')[2]
 let queryString = window.location.search;
@@ -21730,6 +21730,10 @@ const streamSuccess = (stream) => {
 
   joinRoom()
 }
+
+
+
+
  
 const joinRoom = () => {
   socket.emit('joinRoom', { roomName }, (data) => {
@@ -21739,7 +21743,16 @@ const joinRoom = () => {
     rtpCapabilities = data.rtpCapabilities
 
     // once we have rtpCapabilities from the Router, create Device
-    createDevice()
+    createDevice()   
+// Send a chat message
+    document.getElementById('sendBtn').onclick = () =>{
+      sendMessage();
+    }
+    addMemberToDom(data.sender)
+
+    addBotMessageToDom(`welcome to the room ${data.sender}! 👋 `)
+
+
     document.getElementById(`user-container`).addEventListener("click", expandVideoFrame);
     document.getElementById("camera-btn").onclick = () => {
       toggleCamera(streams);
@@ -21798,7 +21811,41 @@ const createDevice = async () => {
   }
 }
 
-const createSendTransport = () => {
+ 
+// Receive a chat message
+socket.on('chat-message', ({ sender, message }) => {
+  console.log('message2',message);
+  const chatWindow = document.getElementById('messages');
+  let newMessage = ` <div class="message__wrapper">  
+      <strong class="message__author">${sender}</strong>
+      <div class="message__body">
+          <p class="message__text">${message}</p> 
+      </div>
+      </div>`
+  chatWindow.insertAdjacentHTML("beforeend",newMessage) 
+  }); 
+
+  const sendMessage =() =>{
+    const message = document.getElementById('message').value; 
+     const chatWindow = document.getElementById('messages');
+        console.log('message1 ',message);
+        let newMessage = ` <div class="messageFromSelf">  
+        <div class="message__wrapper">
+        <strong class="message__author">${displayName}</strong> 
+        <div class="text-alignment">
+        <div class="message__body">
+        <p class="message__text">${message}</p> 
+        </div> 
+        </div>   
+        </div>
+        </div>`
+        chatWindow.insertAdjacentHTML("beforeend",newMessage) 
+     socket.emit('chat-message', { roomName, message });    
+    document.getElementById('message').value = '';  
+  }
+
+
+const createSendTransport = () => { 
   // see server's socket.on('createWebRtcTransport', sender?, ...)
   // this is a call from Producer, so sender = true
   socket.emit('createWebRtcTransport', { consumer: false }, ({ params }) => {
@@ -22015,7 +22062,7 @@ const connectRecvTransport = async (consumerTransport, remoteProducerId, serverC
   })
 }
 
-socket.on('producer-closed', ({ remoteProducerId }) => {
+socket.on('producer-closed', ({ remoteProducerId,sender }) => {
   // server notification is received when a producer is closed
   // we need to close the client-side consumer and associated transport
   const producerToClose = consumerTransports.find(transportData => transportData.producerId === remoteProducerId)
@@ -22029,6 +22076,8 @@ socket.on('producer-closed', ({ remoteProducerId }) => {
   streams__container.removeChild(document.getElementById(`td-${remoteProducerId}`))
   remoteVideoLength = document.getElementsByClassName('video__container').length + 1;  
   document.getElementById('members__count').innerText = remoteVideoLength - 1;  
+  removeMemberFromDom(sender);
+  addBotMessageToDom(`${sender} left the room.`)  
 })
 
 //toggle camera
@@ -22228,4 +22277,31 @@ let hideDisplayFrame = () => {
   }
 }; 
 
+let addBotMessageToDom= async (botMessage) => {
+  let messageWrapper = document.getElementById('messages')
+  let newMessage = ` <div class="message__wrapper">
+  <div class="message__body__bot">
+      <strong class="message__author__bot">🤖 Go Bot</strong>
+      <p class="message__text__bot">${botMessage}</p>
+  </div>
+</div>`
+  messageWrapper.insertAdjacentHTML("beforeend",newMessage)
+}
+ 
+ let addMemberToDom = async (MemberId) =>{
+  let memberWrapper = document.getElementById('member__list')
+  let memberItem = ` <div class="member__wrapper" id="member__${MemberId}__wrapper">
+  <img src="https://templates.iqonic.design/hope-ui/pro/html/chat/assets/images/avatar/03.png" alt="profile" class="avatar-60 rounded-pill" loading="lazy"/>
+  <span class="green__icon"></span>
+      <p class="member_name">${MemberId}</p>
+  </div>`
+ 
+  memberWrapper.insertAdjacentHTML("beforeend",memberItem)
+}
+ let removeMemberFromDom = async (MemberId) =>{
+let memberWrapper = document.getElementById(`member__${MemberId}__wrapper`)
+ addBotMessageToDom(`${MemberId} left the room.`)
+ 
+ memberWrapper.remove()
+}
 },{"mediasoup-client":68,"socket.io-client":83}]},{},[98]);
