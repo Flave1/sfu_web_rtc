@@ -21655,6 +21655,11 @@ const io = require('socket.io-client')
 const mediasoupClient = require('mediasoup-client')
 
 const roomName = window.location.pathname.split('/')[2]
+let queryString = window.location.search;
+let urlParams = new URLSearchParams(queryString);
+let userDisplayName = urlParams.get("userDisplayName");
+sessionStorage.setItem("display_name", userDisplayName);
+let displayName = sessionStorage.getItem("display_name");
 
 const socket = io("/mediasoup")
 
@@ -21703,7 +21708,20 @@ let consumingTransports = [];
 let startedRecording = false;
 let sharingScreen = false;
 let userIdInDisplayFrame = null;
+let remoteVideoLength = 1
 
+
+// function handleScreenSharing(remoteVideos) {
+//   if (!sharingScreen) {
+//     for (let i = 0; i < remoteVideos.length; i++) {
+//       remoteVideos[i].style.objectFit = 'contain';
+//     }
+//   }
+// }
+//window.addEventListener('load', ()=>{ handleScreenSharing(remoteVideos)}); 
+
+ 
+ 
 const streamSuccess = (stream) => {
   localVideo.srcObject = stream
 
@@ -21736,14 +21754,7 @@ document.getElementById("screen-btn").onclick = () => {
   toggleScreen() 
 }
   sharingScreen && document.getElementById("screen-btn").removeEventListener('click',expandVideoFrame)
-  window.addEventListener('load', () => {
-    let remoteVideo = document.getElementById('remoteVideo')
-    if(remoteVideo){
-      if(sharingScreen){
-    remoteVideo.style.objectFit = 'none';
-      } 
-  }
-  });
+
   })
 }
 let constraints = {
@@ -21988,9 +21999,11 @@ const connectRecvTransport = async (consumerTransport, remoteProducerId, serverC
       newElem.setAttribute('class','video__container')
       newElem.addEventListener("click", expandVideoFrame);
       newElem.innerHTML = '<video id="' + remoteProducerId + '" autoplay class="video remoteVideo" ></video>'
-    }
+      remoteVideoLength = document.getElementsByClassName('video__container').length + 1;  
+  document.getElementById('members__count').innerText = remoteVideoLength; 
+    } 
   streams__container.appendChild(newElem)
-
+  
     // destructure and retrieve the video track from the producer
     const { track } = consumer
 
@@ -22014,6 +22027,8 @@ socket.on('producer-closed', ({ remoteProducerId }) => {
 
   // remove the video div element
   streams__container.removeChild(document.getElementById(`td-${remoteProducerId}`))
+  remoteVideoLength = document.getElementsByClassName('video__container').length + 1;  
+  document.getElementById('members__count').innerText = remoteVideoLength - 1;  
 })
 
 //toggle camera
@@ -22056,26 +22071,6 @@ let toggleRecording = async () => {
   }
 };
 
-// let startRecording = () =>{
-//   recordedChunks = [];
-// navigator.mediaDevices.getUserMedia(constraints)
-//         .then((stream) => {
-//             mediaRecorder = new MediaRecorder(stream);
-//             mediaRecorder.ondataavailable = (event) => {
-//               recordedChunks.push(event.data);
-//             }; mediaRecorder.start();
-//             mediaRecorder.onstop = () => {
-//               console.log('Recording stopped');
-//               downloadRecording();
-//             };
-           
-//           })
-//           .catch((error) => {
-//             console.error('Error accessing media devices:', error);
-//           });
-//   startedRecording = true;
-//   console.log("recording started");
-// }
 
 let startRecording = async () =>{
   let stream = await navigator.mediaDevices.getDisplayMedia({
@@ -22121,21 +22116,7 @@ let stopRecording = () => {
   startedRecording = false;
 }
 
-// let downloadRecording =() => {
-//   if (recordedChunks.length === 0) {
-//     console.log("No recorded chunks available.");
-//     return;
-//   }
-//   const blob = new Blob(recordedChunks, { type: recordedChunks[0].type });
-//   const url = URL.createObjectURL(blob);
-//   const a = document.createElement("a");
-//   a.href = url;
-//   a.download = "recorded-media.webm";
-//   document.body.appendChild(a);
-//   a.click();
-//   document.body.removeChild(a);
-//   URL.revokeObjectURL(url);
-// }
+
 let toggleScreen = async () => {
   let streamBox =  document.getElementById("stream__box2");
   let screenBtn = document.getElementById("screen-btn");
@@ -22152,9 +22133,8 @@ let toggleScreen = async () => {
     },
     audio: false
 };
-
   if (!sharingScreen) {
-    sharingScreen = true;
+    sharingScreen = true;  
       try {
           videoElem.srcObject = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
            const screenTrack = videoElem.srcObject.getVideoTracks()[0];
@@ -22166,7 +22146,8 @@ let toggleScreen = async () => {
           
            // Inform other users about the screen sharing
            socket.emit('screenSharingStarted');
-          dumpOptionsInfo();
+          dumpOptionsInfo(); 
+  
       } catch (err) {
           // Handle error
           console.error("Error: " + err);

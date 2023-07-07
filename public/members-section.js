@@ -17,5 +17,5 @@ if(viewMembers){
  window.addEventListener('load', () => { 
   // Get the current number of joined members
  const currentMemberCount = document.querySelectorAll('video').length;
-    document.getElementById('members__count').innerText = currentMemberCount;
+  //   document.getElementById('members__count').innerText = currentMemberCount;
   }); 
