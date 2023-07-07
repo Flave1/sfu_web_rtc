@@ -60,7 +60,7 @@ const streamSuccess = (stream) => {
 
   joinRoom()
 }
-
+ 
 const joinRoom = () => {
   socket.emit('joinRoom', { roomName }, (data) => {
     console.log(`Router RTP Capabilities... ${data.rtpCapabilities}`)
@@ -82,7 +82,16 @@ toggleRecording()
 }
 document.getElementById("screen-btn").onclick = () => {
   toggleScreen() 
+}
+  sharingScreen && document.getElementById("screen-btn").removeEventListener('click',expandVideoFrame)
+  window.addEventListener('load', () => {
+    let remoteVideo = document.getElementById('remoteVideo')
+    if(remoteVideo){
+      if(sharingScreen){
+    remoteVideo.style.objectFit = 'none';
+      } 
   }
+  });
   })
 }
 let constraints = {
@@ -323,12 +332,11 @@ const connectRecvTransport = async (consumerTransport, remoteProducerId, serverC
       //append to the audio container
       newElem.innerHTML = '<audio id="' + remoteProducerId + '" autoplay></audio>'
     } else {
-      //append to the video container
+      //append to the video container  
       newElem.setAttribute('class','video__container')
-      // newElem.setAttribute('class', 'remoteVideo')
+      newElem.addEventListener("click", expandVideoFrame);
       newElem.innerHTML = '<video id="' + remoteProducerId + '" autoplay class="video remoteVideo" ></video>'
     }
-
   streams__container.appendChild(newElem)
 
     // destructure and retrieve the video track from the producer
@@ -477,13 +485,13 @@ let stopRecording = () => {
 //   URL.revokeObjectURL(url);
 // }
 let toggleScreen = async () => {
-  let streamBox =  document.getElementById("stream__box");
+  let streamBox =  document.getElementById("stream__box2");
   let screenBtn = document.getElementById("screen-btn");
-  const newElem = document.createElement('div')
+  const newElem = document.createElement('div');
     newElem.setAttribute('class', 'video__container');
     newElem.innerHTML = `<div class="video-player-screen-share" ><video id="sharedVideo" autoplay ></video></div>`
     streamBox.appendChild(newElem); 
-  let videoElem = document.getElementById("sharedVideo")
+  let videoElem = document.getElementById("sharedVideo");
   var displayMediaOptions = {
     video: {
         cursor: "always",
@@ -493,14 +501,19 @@ let toggleScreen = async () => {
     audio: false
 };
 
-if(userIdInDisplayFrame){
-  streamBox.addEventListener("click", hideDisplayFrame);//edit 
-}
-
   if (!sharingScreen) {
     sharingScreen = true;
       try {
           videoElem.srcObject = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+           const screenTrack = videoElem.srcObject.getVideoTracks()[0];
+           videoParams = { track: screenTrack, ...videoParams };
+           videoProducer.replaceTrack({ track: screenTrack });
+            
+           // Send updated track to the server
+           socket.emit('updateProducer', { kind: 'video', rtpParameters: videoProducer.rtpParameters });
+          
+           // Inform other users about the screen sharing
+           socket.emit('screenSharingStarted');
           dumpOptionsInfo();
       } catch (err) {
           // Handle error
@@ -517,6 +530,7 @@ if(userIdInDisplayFrame){
       console.info("Track constraints:");
       console.info(JSON.stringify(videoTrack.getConstraints(), null, 2));
 }
+    document.getElementById('stream__box').style.display = 'none';
     streamBox.style.display = 'block';
     screenBtn.style.backgroundColor =
       "rgb(42, 98, 202,.9)";
@@ -528,8 +542,18 @@ if(userIdInDisplayFrame){
     streamBox.style.display = 'none';
     screenBtn.style.backgroundColor =
       "rgb(38, 38, 37)";
+      videoProducer.pause();
+
+      // Send pause event to the server
+      socket.emit('updateProducer', { kind: 'video', paused: true });
+    
+      // Inform other users about the screen sharing stop
+      socket.emit('screenSharingStopped');
   }
+  
 }
+
+ 
 
 
 const expandVideoFrame = (e) => {

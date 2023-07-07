@@ -11,7 +11,6 @@
       <div class="nav--list">
         <button
           id="members__button"
-         onClick="setToggleMemberDisplay(!toggleMemberDisplay)"
         >
           <svg
             width="24"
@@ -55,20 +54,20 @@
 
     <main class="general__container">
       <div id="room__container">
-        <!-- <section
-          id="members__container"
-           style={{ display: toggleMemberDisplay ? "block" : "none" }} 
-        >
+        <section
+          id="members__container" >
+           <!-- style={{ display: toggleMemberDisplay ? "block" : "none" }}  -->
+       
           <div id="members__header">
             <p class="mt-3 mx-3">Participants</p>
-            <strong id="members__count">0</strong>
+            <strong id="members__count"></strong>
           </div>
           <div id="member__list"></div>
-        </section> -->
+        </section>
         <section id="stream__container">
           <div id="stream__box"> </div>
+          <div id="stream__box2"> </div>
        
-
           <div id="streams__container">
           <div class="video__container"  id="user-container">
             <div class="video-player" >
@@ -162,6 +161,7 @@
   </body>
   <footer>
       <script src="bundle.js"></script>
+      <script src="members-section.js"></script>
   </footer>
 </html>
 
